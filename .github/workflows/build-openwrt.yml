@@ -20,7 +20,7 @@ jobs:
           dnf install -y findutils gcc gcc-c++ git make ncurses-devel patch \
                          python3 rsync tar unzip wget which zlib-devel \
                          perl-FindBin perl-Thread-Queue perl-IPC-Cmd \
-                         perl-core file python3-netifaces glibc-static
+                         perl-core file glibc-static
 
       - name: Update and install feeds
         run: |
@@ -45,7 +45,7 @@ jobs:
         run: make defconfig
 
       - name: Run the build (Verbose)
-        run: make -j1 V=s
+        run: FORCE_UNSAFE_CONFIGURE=1 make -j1 V=s
 
       - name: Package All Packages
         run: tar -czf openwrt-packages.tar.gz -C bin packages

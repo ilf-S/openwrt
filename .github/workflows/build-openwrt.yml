@@ -45,7 +45,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: openwrt-firmware-bpi-rv2
-          path: bin/targets/siflower/sf21/bananapi_bpi-rv2-nand-squashfs-sysupgrade.bin
+          path: bin/targets/siflower/sf21/*-sysupgrade.bin
 
       # --- New upload step for the packages ---
       - name: Upload Packages Artifact

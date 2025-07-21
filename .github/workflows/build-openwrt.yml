@@ -1,0 +1,57 @@
+name: Build OpenWrt for BPI-RV2 with Toolchain & SDK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container: fedora:latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        run: |
+          dnf update -y
+          dnf install -y findutils gcc gcc-c++ git make ncurses-devel patch \
+                         python3 rsync tar unzip wget which zlib-devel
+
+      - name: Update and install feeds
+        run: |
+          ./scripts/feeds update -a
+          ./scripts/feeds install -a
+
+      - name: Copy build configuration
+        run: cp .config.bpi-rv2 .config
+
+      - name: Run the build
+        # A standard 'make' builds the image and prepares the SDK/toolchain
+        run: make -j$(nproc)
+
+      - name: Package Toolchain
+        run: tar -czf openwrt-toolchain.tar.gz -C bin toolchain
+
+      - name: Package SDK
+        run: tar -czf openwrt-sdk.tar.gz -C bin sdk
+
+      - name: Upload Firmware Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: openwrt-firmware-bpi-rv2
+          path: bin/targets/siflower/sf19a28/openwrt-siflower-sf19a28-bananapi-bpi-rv2-sysupgrade.bin
+
+      - name: Upload Toolchain Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: openwrt-toolchain
+          path: openwrt-toolchain.tar.gz
+
+      - name: Upload SDK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: openwrt-sdk
+          path: openwrt-sdk.tar.gz

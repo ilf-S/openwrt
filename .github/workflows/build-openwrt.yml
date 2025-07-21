@@ -43,7 +43,7 @@ jobs:
 
       - name: Prepare configuration
         run: make defconfig
-      
+
       - name: Run the build
         run: make -j$(nproc)
 

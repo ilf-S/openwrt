@@ -1,4 +1,4 @@
-name: Build OpenWrt for BPI-RV2 with Toolchain & SDK
+name: Build OpenWrt with Packages, SDK, & Toolchain
 
 on:
   workflow_dispatch:
@@ -26,11 +26,14 @@ jobs:
           ./scripts/feeds install -a
 
       - name: Copy build configuration
-        run: cp .config.bpi-rv2 .config
+        run: cp .config.snapshot .config
 
       - name: Run the build
-        # A standard 'make' builds the image and prepares the SDK/toolchain
         run: make -j$(nproc)
+
+      # --- New steps to package the kmods and other packages ---
+      - name: Package All Packages
+        run: tar -czf openwrt-packages.tar.gz -C bin packages
 
       - name: Package Toolchain
         run: tar -czf openwrt-toolchain.tar.gz -C bin toolchain
@@ -42,7 +45,14 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: openwrt-firmware-bpi-rv2
-          path: bin/targets/siflower/sf19a28/openwrt-siflower-sf19a28-bananapi-bpi-rv2-sysupgrade.bin
+          path: bin/targets/siflower/sf21/bananapi_bpi-rv2-nand-squashfs-sysupgrade.bin
+
+      # --- New upload step for the packages ---
+      - name: Upload Packages Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: openwrt-packages
+          path: openwrt-packages.tar.gz
 
       - name: Upload Toolchain Artifact
         uses: actions/upload-artifact@v4

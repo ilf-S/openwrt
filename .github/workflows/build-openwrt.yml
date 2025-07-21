@@ -28,7 +28,7 @@ jobs:
           ./scripts/feeds install -a
 
       - name: Copy build configuration
-        run: cp .config.snapshot .config
+        run: cp .config.bpi-rv2 .config
 
       - name: Cache build directories
         uses: actions/cache@v4

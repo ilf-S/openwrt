@@ -1,4 +1,4 @@
-name: Build OpenWrt with Packages, SDK, & Toolchain
+name: Build OpenWrt with Caching and Dependencies
 
 on:
   workflow_dispatch:
@@ -18,7 +18,8 @@ jobs:
         run: |
           dnf update -y
           dnf install -y findutils gcc gcc-c++ git make ncurses-devel patch \
-                         python3 rsync tar unzip wget which zlib-devel
+                         python3 rsync tar unzip wget which zlib-devel \
+                         perl-FindBin
 
       - name: Update and install feeds
         run: |
@@ -28,10 +29,20 @@ jobs:
       - name: Copy build configuration
         run: cp .config.snapshot .config
 
+      - name: Cache build directories
+        uses: actions/cache@v4
+        with:
+          path: |
+            staging_dir
+            build_dir
+            dl
+          key: ${{ runner.os }}-openwrt-${{ hashFiles('.config') }}
+          restore-keys: |
+            ${{ runner.os }}-openwrt-
+
       - name: Run the build
         run: make -j$(nproc)
 
-      # --- New steps to package the kmods and other packages ---
       - name: Package All Packages
         run: tar -czf openwrt-packages.tar.gz -C bin packages
 
@@ -41,13 +52,12 @@ jobs:
       - name: Package SDK
         run: tar -czf openwrt-sdk.tar.gz -C bin sdk
 
-      - name: Upload Firmware Artifact
+      - name: Upload Firmware Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: openwrt-firmware-bpi-rv2
           path: bin/targets/siflower/sf21/*-sysupgrade.bin
 
-      # --- New upload step for the packages ---
       - name: Upload Packages Artifact
         uses: actions/upload-artifact@v4
         with:

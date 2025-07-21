@@ -41,6 +41,9 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-openwrt-
 
+      - name: Prepare configuration
+        run: make defconfig
+      
       - name: Run the build
         run: make -j$(nproc)
 

@@ -19,7 +19,8 @@ jobs:
           dnf update -y
           dnf install -y findutils gcc gcc-c++ git make ncurses-devel patch \
                          python3 rsync tar unzip wget which zlib-devel \
-                         perl-FindBin
+                         perl-FindBin perl-Thread-Queue perl-IPC-Cmd \
+                         perl-core file
 
       - name: Update and install feeds
         run: |

@@ -14,9 +14,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Unshallow git repository
-        run: git fetch --unshallow
-
       - name: Install build dependencies
         run: |
           dnf update -y
@@ -24,6 +21,9 @@ jobs:
                          python3 rsync tar unzip wget which zlib-devel \
                          perl-FindBin perl-Thread-Queue perl-IPC-Cmd \
                          perl-core file glibc-static git
+
+      - name: Unshallow git repository
+        run: git fetch --unshallow
 
       - name: Update and install feeds
         run: |

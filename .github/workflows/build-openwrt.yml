@@ -1,4 +1,4 @@
-name: Build OpenWrt with Caching and Dependencies
+name: Build OpenWrt
 
 on:
   workflow_dispatch:
@@ -20,8 +20,7 @@ jobs:
           dnf install -y findutils gcc gcc-c++ git make ncurses-devel patch \
                          python3 rsync tar unzip wget which zlib-devel \
                          perl-FindBin perl-Thread-Queue perl-IPC-Cmd \
-                         perl-core file glibc-static \
-                         git
+                         perl-core file glibc-static
 
       - name: Unshallow git repository
         run: git fetch --unshallow
@@ -34,7 +33,7 @@ jobs:
         working-directory: ${{ github.workspace }}
 
       - name: Copy build configuration
-        run: cp .config.snapshot .config
+        run: cp .config.bpi-rv2 .config
         working-directory: ${{ github.workspace }}
 
       - name: Cache build directories
@@ -53,7 +52,9 @@ jobs:
         working-directory: ${{ github.workspace }}
 
       - name: Run the build
-        run: FORCE_UNSAFE_CONFIGURE=1 make -j$(nproc) V=s
+        run: make -j$(nproc) V=s
+        env:
+          FORCE_UNSAFE_CONFIGURE: 1
         working-directory: ${{ github.workspace }}
 
       - name: Package build artifacts
@@ -86,3 +87,4 @@ jobs:
         with:
           name: openwrt-sdk
           path: ${{ github.workspace }}/openwrt-sdk.tar.gz
+

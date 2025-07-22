@@ -20,75 +20,69 @@ jobs:
           dnf install -y findutils gcc gcc-c++ git make ncurses-devel patch \
                          python3 rsync tar unzip wget which zlib-devel \
                          perl-FindBin perl-Thread-Queue perl-IPC-Cmd \
-                         perl-core file glibc-static git
-  
+                         perl-core file glibc-static \
+                         git
+
       - name: Unshallow git repository
-        run: |
-          cd $GITHUB_WORKSPACE
-          git fetch --unshallow
+        run: git fetch --unshallow
+        working-directory: ${{ github.workspace }}
 
       - name: Update and install feeds
         run: |
-          cd $GITHUB_WORKSPACE
           ./scripts/feeds update -a
           ./scripts/feeds install -a
+        working-directory: ${{ github.workspace }}
 
       - name: Copy build configuration
-        run: |
-          cd $GITHUB_WORKSPACE
-          cp .config.snapshot .config
+        run: cp .config.snapshot .config
+        working-directory: ${{ github.workspace }}
 
       - name: Cache build directories
         uses: actions/cache@v4
         with:
-          # Important: Set the path relative to the workspace
           path: |
             ${{ github.workspace }}/staging_dir
             ${{ github.workspace }}/build_dir
             ${{ github.workspace }}/dl
-          key: ${{ runner.os }}-openwrt-${{ hashFiles('**/openwrt/.config') }}
+          key: ${{ runner.os }}-openwrt-${{ hashFiles(format('{0}/.config', github.workspace)) }}
           restore-keys: |
             ${{ runner.os }}-openwrt-
 
       - name: Prepare configuration
+        run: make defconfig
+        working-directory: ${{ github.workspace }}
+
+      - name: Run the build
+        run: FORCE_UNSAFE_CONFIGURE=1 make -j$(nproc) V=s
+        working-directory: ${{ github.workspace }}
+
+      - name: Package build artifacts
         run: |
-          cd $GITHUB_WORKSPACE
-          make defconfig
-
-      - name: Run the build (Verbose)
-        run: |
-          cd $GITHUB_WORKSPACE
-          FORCE_UNSAFE_CONFIGURE=1 make -j$(nproc) V=s
-
-      - name: Package All Packages
-        run: tar -czf openwrt-packages.tar.gz -C bin packages
-
-      - name: Package Toolchain
-        run: tar -czf openwrt-toolchain.tar.gz -C bin toolchain
-
-      - name: Package SDK
-        run: tar -czf openwrt-sdk.tar.gz -C bin sdk
+          tar -czf openwrt-packages.tar.gz -C bin packages
+          tar -czf openwrt-toolchain.tar.gz -C bin toolchain
+          tar -czf openwrt-sdk.tar.gz -C bin sdk
+        working-directory: ${{ github.workspace }}
 
       - name: Upload Firmware Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: openwrt-firmware-bpi-rv2
-          path: bin/targets/siflower/sf21/*-sysupgrade.bin
+          path: ${{ github.workspace }}/bin/targets/siflower/sf21/*-sysupgrade.bin
 
       - name: Upload Packages Artifact
         uses: actions/upload-artifact@v4
         with:
           name: openwrt-packages
-          path: openwrt-packages.tar.gz
+          path: ${{ github.workspace }}/openwrt-packages.tar.gz
 
       - name: Upload Toolchain Artifact
         uses: actions/upload-artifact@v4
         with:
           name: openwrt-toolchain
-          path: openwrt-toolchain.tar.gz
+          path: ${{ github.workspace }}/openwrt-toolchain.tar.gz
 
       - name: Upload SDK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: openwrt-sdk
-          path: openwrt-sdk.tar.gz
+          path: ${{ github.workspace }}/openwrt-sdk.tar.gz

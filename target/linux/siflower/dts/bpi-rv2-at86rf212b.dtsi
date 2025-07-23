@@ -1,44 +1,26 @@
 // SPDX-License-Identifier: (GPL-2.0 OR MIT)
 
-/*
- * Banana‑Pi BPI‑RV2 – AT86RF212B radio on SPI1 (26‑pin header)
- *   • Disables XGMAC5 (frees the RGMII pin‑block)
- *   • Enables SPI1 with existing spi1_pins (FUNC_MODE1 mapping)
- *   • Hooks IRQ to GPIO20 (header pin 7)
- */
+/* BPI‑RV2 – AT86RF212B on SPI1 / CE0 (header pin 24) */
 
-/* ---------- 1. release the pin‑block by disabling MAC‑5 ---------- */
-&xgmac5 {
-	status = "disabled";
+&xgmac5 {                       /* free the pin block */
+        status = "disabled";
 };
 
+&spi1 {                         /* controller @0xc201000 */
+        status          = "okay";
+        pinctrl-names   = "default";
+        pinctrl-0       = <&spi1_pins>;          /* FUNC_MODE1 mapping */
+        cs-gpios        = <&gpio 24 GPIO_ACTIVE_LOW>;    /* CE0 */
+        num-cs          = <1>;
 
-/* IRQ: header pin 7  (PWM1 / GPIO20) */
-&iomux {
-        at86rf212b_irq_pin: pinmux-irq {
-                pinctrl-single,pins = <GPIO20 GPIO_MODE>;
+        at86rf212b@0 {
+                compatible          = "atmel,at86rf212b";
+                reg                 = <0>;              /* CE0 */
+                spi-max-frequency   = <1000000>;        /* 1 MHz for jump wires */
+
+                /* IRQ on GPIO20 (header pin 7) */
+                interrupts-extended = <&gpio 20 IRQ_TYPE_EDGE_RISING>;
+
+                ieee802154;
         };
-}
-
-/* ---------- 2. enable SPI1 and bind the radio -------------------- */
-&spi1 {
-	/* spi1_pins is already defined in sf21.dtsi with FUNC_MODE1 */
-	status          = "okay";
-	pinctrl-names   = "default";
-	pinctrl-0       = <&spi1_pins>; /* FUNC_MODE1 set */
-	cs-gpios	= <&gpio 24 GPIO_ACTIVE_LOW>;   /* CE0 */
-	num-cs		= <1>; /* only CE0 is routed */
-
-	at86rf212b@0 {
-		compatible        = "atmel,at86rf212b";
-		reg               = <0>;           /* HW CS0 = RGMII_GTX_CLK line */
-		spi-max-frequency = <1000000>;     /* safe 8 MHz */
-		pinctrl-0           = <&at86rf212b_irq_pin>;
-
-		/* IRQ on GPIO20 (header pin 7: PWM1/GPIO20) */
-		interrupts-extended = <&gpio 20 IRQ_TYPE_EDGE_RISING>;
-
-		/* leave reset‑gpios unset (not wired) */
-		ieee802154;                        /* tag for generic wpan */
-	};
 };

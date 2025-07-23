@@ -185,6 +185,7 @@
 
 &usb {
 	status = "okay";
+	vbus-supply = <&usb_vbus>;
 };
 
 &dpns {

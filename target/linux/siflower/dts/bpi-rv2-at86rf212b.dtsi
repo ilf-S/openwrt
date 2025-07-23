@@ -1,0 +1,61 @@
+// SPDX-License-Identifier: (GPL-2.0 OR MIT)
+/dts-v1/;
+/*
+ * Banana‑Pi BPI‑RV2 – AT86RF212B radio on SPI1 (26‑pin header)
+ * Requires:
+ *   - sf21h8898_bananapi_bpi-rv2.dtsi   (board base)
+ *   - sf21h8898.dtsi / sf21.dtsi        (SoC + pinctrl)
+ */
+
+/ {
+	/* 1.  Disable the RGMII‑based MAC that owns those pins */
+	&xgmac5 {
+		status = "disabled";
+	};
+
+	/* 2.  Extra pinctrl for the radio’s IRQ line on header pin 7 → GPIO20 */
+	&iomux {
+		wpan_irq_pins: wpan-irq-pins {
+			/* PWM1/GPIO20 in plain GPIO mode */
+			pinctrl-single,pins = <PWM1 GPIO_MODE>;
+			/* leave SoC bias alone (external 10 kΩ pull‑up on board) */
+		};
+	};
+};
+
+/* 3 + 4.  Turn on SPI1 and attach the AT86RF212B */
+&spi1 {
+	status = "okay";
+
+	/* reuse the FUNC_MODE1 set already defined for SPI1 */
+	pinctrl-0 = <&spi1_pins>;
+	pinctrl-names = "default";
+
+	/* chip‑select is GPIO24 = SPI1_CSN (header pin 24) */
+	cs-gpios = <&gpio 24 GPIO_ACTIVE_LOW>;
+	num-cs = <1>;
+
+	/* AT86RF212B 900 MHz radio on CS0 */
+	radio0: at86rf212b@0 {
+		compatible        = "atmel,at86rf212b";
+		reg               = <0>;           /* CS0 */
+		spi-max-frequency = <8000000>;     /* safe up to 8 MHz */
+
+		/* IRQ on GPIO20 (header pin 7) – active high, edge rising */
+		interrupts-extended = <&gpio 20 IRQ_TYPE_EDGE_RISING>;
+		interrupt-names     = "irq";
+
+		/* reset is optional – uncomment if you wire one up
+		 * reset-gpios = <&gpio XX GPIO_ACTIVE_LOW>;
+		 */
+
+		/* the driver will automatically expose ‘wpan0’ for 802.15.4 */
+	};
+};
+
+/* 5.  Make the IRQ line usable from userspace too (optional) */
+&wpan_irq_pins {
+	gpio-hog;
+	gpios = <20 GPIO_LINE_DIRECTION_IN>;
+	line-name = "wpan-irq";
+};

@@ -10,6 +10,7 @@
         status          = "okay";
         pinctrl-names   = "default";
         pinctrl-0       = <&spi1_pins>;          /* FUNC_MODE1 mapping */
+	spi-num-chipselects = <1>;
         cs-gpios        = <&gpio 24 GPIO_ACTIVE_LOW>;    /* CE0 */
         num-cs          = <1>;
 

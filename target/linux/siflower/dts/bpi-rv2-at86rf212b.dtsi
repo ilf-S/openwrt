@@ -6,6 +6,11 @@
         status = "disabled";
 };
 
+/* enable header‑SPI clocks */
+&topcrm {
+        siflower,critical-gates = <0x02 0x03>;   /* spi1_apb, spi1_ssp */
+};
+
 &spi1 {                         /* controller @0xc201000 */
         status          = "okay";
         pinctrl-names   = "default";
